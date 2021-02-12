@@ -29,6 +29,7 @@ import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import static com.example.imageeditor.EditImageActivity.bitmapBasic;
 import static com.example.imageeditor.EditImageActivity.cropThenRotateBitmap;
 import static com.example.imageeditor.EditImageActivity.croppedBitmap;
 import static com.example.imageeditor.EditImageActivity.rotateBitmap;
@@ -39,8 +40,11 @@ public class MainActivity extends AppCompatActivity {
     ImageView imageView;
     File cameraImage;
     TextView textView;
-   static Bitmap bitmap;
+    static Bitmap bitmap;
     static String imageFileName;
+    static Uri uri;
+
+    @RequiresApi(api = Build.VERSION_CODES.Q)
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -56,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
     private File createImageFile() throws IOException {
         // Create an image file name
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        imageFileName  = "JPEG_" + timeStamp + "_";
+        imageFileName = "JPEG_" + timeStamp + "_";
         File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
         File image = File.createTempFile(
                 imageFileName,  /* prefix */
@@ -95,104 +99,47 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-//    @RequiresApi(api = Build.VERSION_CODES.Q)
-//    private void getPhoto() throws IOException {
-//        File photoFile = null;
-//        try {
-//            photoFile = createImageFile();
-//        } catch (IOException ex) {
-//            // Error occurred while creating the File
-//            System.out.println(ex.getMessage());
-//        }
-//        ContentValues contentValues = new ContentValues();
-//        contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, imageFileName + ".jpg");
-//        contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg");
-//        contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES);
-//
-//        ContentResolver resolver = getContentResolver();
-//        Uri uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues);
-//        OutputStream imageOutStream = null;
-//
-//        try {
-//            if (uri == null) {
-//                throw new IOException("Failed to insert MediaStore row");
-//            }
-//
-//            imageOutStream = resolver.openOutputStream(uri);
-//
-//            if (!bitmap.compress(Bitmap.CompressFormat.JPEG, 100, imageOutStream)) {
-//                throw new IOException("Failed to compress bitmap");
-//            }
-//
-//
-//            Toast.makeText(this, "Imave Saved", Toast.LENGTH_SHORT).show();
-//
-//        } finally {
-//            if (imageOutStream != null) {
-//                imageOutStream.close();
-//                Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-//                if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-////
-////            // Continue only if the File was successfully created
-//                    if (photoFile != null) {
-//                        Uri photoURI = FileProvider.getUriForFile(this,
-//                                "com.example.imageeditor.fileprovider",
-//                                photoFile);
-//                        takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
-//                        startActivityForResult(takePictureIntent, 1);
-//                    }
-//                }
-//            }
-//        }
-//    }
+
+    public void makeBitmapNull(){
+        croppedBitmap = null;
+        rotateBitmap = null;
+        cropThenRotateBitmap = null;
+        rotateThenCropBitmap = null;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         imageView = findViewById(R.id.imageView);
-        textView=findViewById(R.id.textView);
-        if(cropThenRotateBitmap !=null){
+        textView = findViewById(R.id.textView);
+
+        if (cropThenRotateBitmap != null) {
             imageView.setImageBitmap(cropThenRotateBitmap);
             textView.setText("Edited Image");
-            croppedBitmap=null;
-            rotateBitmap=null;
-            cropThenRotateBitmap=null;
-            rotateThenCropBitmap=null;
-        }
-        else if(rotateThenCropBitmap !=null){
+            makeBitmapNull();
+
+        } else if (rotateThenCropBitmap != null) {
             imageView.setImageBitmap(rotateThenCropBitmap);
             textView.setText("Edited Image");
-            croppedBitmap=null;
-            rotateBitmap=null;
-            cropThenRotateBitmap=null;
-            rotateThenCropBitmap=null;
+            makeBitmapNull();
 
-        }
-        else if(rotateBitmap !=null){
+        } else if (rotateBitmap != null) {
             imageView.setImageBitmap(rotateBitmap);
             textView.setText("Edited Image");
-            croppedBitmap=null;
-            rotateBitmap=null;
-            cropThenRotateBitmap=null;
-            rotateThenCropBitmap=null;
-        }
-        else if(croppedBitmap!=null){
+            makeBitmapNull();
+        } else if (croppedBitmap != null) {
             imageView.setImageBitmap(croppedBitmap);
             textView.setText("Edited Image");
-            croppedBitmap=null;
-            rotateBitmap=null;
-            cropThenRotateBitmap=null;
-            rotateThenCropBitmap=null;
-        }
-
-        else{
+            makeBitmapNull();
+        } else if(bitmap!=null) {
             imageView.setImageBitmap(bitmap);
             textView.setText("Edited Image");
+            makeBitmapNull();
         }
     }
 
-    @RequiresApi(api = Build.VERSION_CODES.M)
+    @RequiresApi(api = Build.VERSION_CODES.Q)
     public void clickSelfie(View view) throws IOException {
 
         if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
@@ -206,25 +153,51 @@ public class MainActivity extends AppCompatActivity {
     public void clickGallery(View view) {
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.Q)
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-//        Uri uri = data.getData();
+
 
         if (requestCode == 1 && resultCode == RESULT_OK) {
             try {
                 bitmap = BitmapFactory.decodeFile(currentPhotoPath);
-//                Bitmap bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), uri);
-//                Bitmap bitmap = (Bitmap) data.getExtras().get("data");
-//                Intent intent = new Intent(this, EditImageActivity.class);
-////                imageView.setImageBitmap(bitmap);
-////                imageView.setScaleType(ImageView.ScaleType.FIT_XY);
-//                intent.putExtra("image", bitmap);
-//                startActivity(intent);
-                Intent intent = new Intent(this, EditImageActivity.class);
+                System.out.println(bitmap);
 
-//                intent.putExtra("image", bitmap);
-                startActivity(intent);
+                ContentValues contentValues = new ContentValues();
+                contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, imageFileName + ".jpg");
+                contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg");
+                contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES);
+
+                ContentResolver resolver = getContentResolver();
+                uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues);
+                OutputStream imageOutStream = null;
+
+                try {
+                    if (uri == null) {
+                        throw new IOException("Failed to insert MediaStore row");
+                    }
+
+                    imageOutStream = resolver.openOutputStream(uri);
+
+                    if (!bitmap.compress(Bitmap.CompressFormat.JPEG, 100, imageOutStream)) {
+                        throw new IOException("Failed to compress bitmap");
+                    }
+
+
+                    Toast.makeText(this, "Imave Saved", Toast.LENGTH_SHORT).show();
+
+                } finally {
+                    if (imageOutStream != null) {
+                        imageOutStream.close();
+
+
+                    }
+                    Intent intent = new Intent(this, EditImageActivity.class);
+
+                    startActivity(intent);
+                }
+
             } catch (Exception e) {
                 e.printStackTrace();
             }

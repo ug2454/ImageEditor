@@ -24,11 +24,13 @@ import androidx.core.app.ActivityCompat;
 
 import com.theartofdev.edmodo.cropper.CropImage;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
 import static com.example.imageeditor.MainActivity.bitmap;
 import static com.example.imageeditor.MainActivity.imageFileName;
+import static com.example.imageeditor.MainActivity.uri;
 
 public class EditImageActivity extends AppCompatActivity {
 
@@ -45,163 +47,88 @@ public class EditImageActivity extends AppCompatActivity {
     static Uri resultUri;
     static Bitmap unChangedBitmap;
     boolean isRotate = false;
+    static Bitmap bitmapBasic;
+    float fromRotation;
+    float toRotation;
 
 
-//    public void save(View view) {
-//        BitmapDrawable bitmapDrawable = (BitmapDrawable) imageView.getDrawable();
-//        Bitmap bitmap = bitmapDrawable.getBitmap();
-//
-//        System.out.println(imageFileName);
-//        FileOutputStream fileOutputStream = null;
-//        File file = Environment.getExternalStoragePublicDirectory("Pictures");
-////        File dir = getBaseContext().getExternalFilesDir(null);
-//        System.out.println(file);
-//        System.out.println(file.mkdir());
-//        File outFile = new File(file, imageFileName+".png");
-//        try {
-//            fileOutputStream = new FileOutputStream(outFile);
-//
-//        } catch (Exception e) {
-//            System.out.println(e.getMessage());
-//        }
-//        try {
-//            bitmap.compress(Bitmap.CompressFormat.PNG, 100, fileOutputStream);
-//
-//        } catch (Exception e) {
-//            System.out.println(e.getMessage());
-//        }
-//
-//        try {
-//            fileOutputStream.flush();
-//        } catch (Exception e) {
-//            System.out.println(e.getMessage());
-//        }
-//        try {
-//            fileOutputStream.close();
-//        } catch (Exception e) {
-//            System.out.println(e.getMessage());
-//        }
-//    }
+    public void makeBitmapNull(){
+        mCurrRotation=0;
+        toRotation=0;
+        fromRotation=0;
+        rotateBitmap=null;
+        croppedBitmap=null;
+        rotateThenCropBitmap=null;
+        cropThenRotateBitmap=null;
+    }
+
+    public void undo(View view) {
+        Matrix matrix = new Matrix();
 
 
-//    @RequiresApi(api = Build.VERSION_CODES.Q)
-//    public void crop(View view) throws IOException {
-//        try {
-//            ContentValues contentValues = new ContentValues();
-//            contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, imageFileName + ".jpg");
-//            contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg");
-//            contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES);
-//
-//            ContentResolver resolver = getContentResolver();
-//            Uri uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues);
-//            OutputStream imageOutStream = null;
-//
-//
-//            try {
-//                if (uri == null) {
-//                    throw new IOException("Failed to insert MediaStore row");
-//                }
-//
-//                imageOutStream = resolver.openOutputStream(uri);
-//                if (bitmap1 != null) {
-//                    if (!bitmap1.compress(Bitmap.CompressFormat.JPEG, 100, imageOutStream)) {
-//                        throw new IOException("Failed to compress bitmap");
-//                    }
-//                } else {
-//
-//                    if (!bitmap.compress(Bitmap.CompressFormat.JPEG, 100, imageOutStream)) {
-//                        throw new IOException("Failed to compress bitmap");
-//                    }
-//
-//                }
-//
-//                Toast.makeText(this, "Imave Saved", Toast.LENGTH_SHORT).show();
-//
-//            } finally {
-//                if (imageOutStream != null) {
-//                    imageOutStream.close();
-////                    Intent intent = new Intent(this, MainActivity.class);
-////                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-////                    finish();
-////                    startActivity(intent);
-//                }
-//            }
-//            Intent cropIntent = new Intent("com.android.camera.action.CROP");
-//            // indicate image type and Uri
-//            cropIntent.setDataAndType(uri, "image/jpeg");
-//            // set crop properties here
-//            cropIntent.putExtra("crop", true);
-//            // indicate aspect of desired crop
-//            cropIntent.putExtra("aspectX", 1);
-//            cropIntent.putExtra("aspectY", 1);
-//            // indicate output X and Y
-//            cropIntent.putExtra("outputX", 3000);
-//            cropIntent.putExtra("outputY", 3000);
-//            // retrieve data on return
-//            cropIntent.putExtra("return-data", true);
-//            // start the activity - we handle returning in onActivityResult
-//            startActivityForResult(cropIntent, PIC_CROP);
-//        }
-//        // respond to users whose devices do not support the crop action
-//        catch (ActivityNotFoundException anfe) {
-//            // display an error message
-//            String errorMessage = "Whoops - your device doesn't support the crop action!";
-//            Toast toast = Toast.makeText(this, errorMessage, Toast.LENGTH_SHORT);
-//            toast.show();
-//        }
-//    }
+         toRotation = mCurrRotation += 90;
+
+        final RotateAnimation rotateAnimation = new RotateAnimation(
+                fromRotation, 0, imageView.getWidth() / 2, imageView.getHeight() / 2);
+
+        rotateAnimation.setDuration(1000);
+        rotateAnimation.setFillAfter(true);
+
+
+        matrix.setRotate(toRotation);
+        System.out.println(toRotation + "TO ROTATION");
+        System.out.println(fromRotation + "FROM ROTATION");
+        if (croppedBitmap != null) {
+            cropThenRotateBitmap = Bitmap.createBitmap(croppedBitmap, 0, 0, croppedBitmap.getWidth(), croppedBitmap.getHeight(), matrix, true);
+        } else {
+            rotateBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+        }
+
+        imageView.setImageBitmap(bitmap);
+        imageView.startAnimation(rotateAnimation);
+        makeBitmapNull();
+    }
 
     @RequiresApi(api = Build.VERSION_CODES.Q)
-    public void crop(View view) throws IOException {
-        ContentValues contentValues = new ContentValues();
-        contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, imageFileName + ".jpg");
-        contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg");
-        contentValues.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES);
+    public void crop(View view) {
 
-        ContentResolver resolver = getContentResolver();
-        Uri uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues);
-        OutputStream imageOutStream = null;
-
-
-        try {
-            if (uri == null) {
-                throw new IOException("Failed to insert MediaStore row");
-            }
-
-            imageOutStream = resolver.openOutputStream(uri);
-            if (rotateBitmap != null) {
-                if (!rotateBitmap.compress(Bitmap.CompressFormat.JPEG, 100, imageOutStream)) {
-                    throw new IOException("Failed to compress bitmap");
-                }
-            } else {
-                if (!bitmap.compress(Bitmap.CompressFormat.JPEG, 100, imageOutStream)) {
-                    throw new IOException("Failed to compress bitmap");
-                }
-            }
-
-
-            Toast.makeText(this, "Imave Saved", Toast.LENGTH_SHORT).show();
-
-        } finally {
-            if (imageOutStream != null) {
-                imageOutStream.close();
-//                    Intent intent = new Intent(this, MainActivity.class);
-//                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-//                    finish();
-//                    startActivity(intent);
-            }
+        if(rotateBitmap!=null){
+            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+            rotateBitmap.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
+            String path = MediaStore.Images.Media.insertImage(getContentResolver(), rotateBitmap, imageFileName+".jpg", null);
+//            System.out.println(Uri.parse(path));
+             uri=Uri.parse(path);
         }
         CropImage.activity(uri)
                 .start(this);
     }
 
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
+            CropImage.ActivityResult result = CropImage.getActivityResult(data);
+            if (resultCode == RESULT_OK) {
+                resultUri = result.getUri();
+                imageView.setImageURI(resultUri);
+//                Matrix matrix = new Matrix();
+                BitmapDrawable bitmapDrawable = (BitmapDrawable) imageView.getDrawable();
+                System.out.println(imageView.getRotation());
+                croppedBitmap = bitmapDrawable.getBitmap();
+                if (isRotate) {
+                    rotateThenCropBitmap = croppedBitmap;
+                }
+
+            } else if (resultCode == CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE) {
+                Exception error = result.getError();
+            }
+        }
+    }
+
     @RequiresApi(api = Build.VERSION_CODES.Q)
     public void save(View view) throws IOException {
 
-//        imageView.invalidate();
-//        BitmapDrawable bitmapDrawable = (BitmapDrawable) imageView.getDrawable();
-//        System.out.println(imageView.getRotation());
-//        bitmap1 = bitmapDrawable.getBitmap();
+
         ContentValues contentValues = new ContentValues();
         contentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, imageFileName + ".jpg");
         contentValues.put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg");
@@ -259,10 +186,10 @@ public class EditImageActivity extends AppCompatActivity {
         mCurrRotation %= 360;
         Matrix matrix = new Matrix();
 
-        matrix.postRotate(90);
+
         System.out.println(imageView.getRotation());
-        float fromRotation = mCurrRotation;
-        float toRotation = mCurrRotation += 90;
+        fromRotation = mCurrRotation;
+        toRotation = mCurrRotation += 90;
 
         final RotateAnimation rotateAnimation = new RotateAnimation(
                 fromRotation, toRotation, imageView.getWidth() / 2, imageView.getHeight() / 2);
@@ -283,50 +210,10 @@ public class EditImageActivity extends AppCompatActivity {
 
         imageView.startAnimation(rotateAnimation);
 
-//        imageView.setRotation(toRotation);
-
 
     }
 
-//    @Override
-//    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-//        super.onActivityResult(requestCode, resultCode, data);
-//
-//        if (requestCode == PIC_CROP) {
-//            if (data != null) {
-//                Bundle extras = data.getExtras();
-//                croppedBitmap = extras.getParcelable("data");
-//                imageView.setImageBitmap(croppedBitmap);
-//            }
-//        }
-//    }
 
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == CropImage.CROP_IMAGE_ACTIVITY_REQUEST_CODE) {
-            CropImage.ActivityResult result = CropImage.getActivityResult(data);
-            if (resultCode == RESULT_OK) {
-                resultUri = result.getUri();
-                imageView.setImageURI(resultUri);
-                Matrix matrix = new Matrix();
-                BitmapDrawable bitmapDrawable = (BitmapDrawable) imageView.getDrawable();
-                System.out.println(imageView.getRotation());
-                croppedBitmap = bitmapDrawable.getBitmap();
-                if (isRotate) {
-                    rotateThenCropBitmap = croppedBitmap;
-                }
-//                if (rotateBitmap != null) {
-//                    croppedBitmap = Bitmap.createBitmap(rotateBitmap, 0, 0, rotateBitmap.getWidth(), rotateBitmap.getHeight(), matrix, true);
-//                } else {
-//                    croppedBitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
-//                }
-
-            } else if (resultCode == CropImage.CROP_IMAGE_ACTIVITY_RESULT_ERROR_CODE) {
-                Exception error = result.getError();
-            }
-        }
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
