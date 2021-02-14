@@ -31,6 +31,7 @@ import java.io.OutputStream;
 import static com.example.imageeditor.MainActivity.bitmap;
 import static com.example.imageeditor.MainActivity.imageFileName;
 import static com.example.imageeditor.MainActivity.uri;
+import static com.example.imageeditor.MainActivity.uri1;
 
 public class EditImageActivity extends AppCompatActivity {
 
@@ -98,9 +99,15 @@ public class EditImageActivity extends AppCompatActivity {
             String path = MediaStore.Images.Media.insertImage(getContentResolver(), rotateBitmap, imageFileName+".jpg", null);
 //            System.out.println(Uri.parse(path));
              uri=Uri.parse(path);
+            CropImage.activity(uri)
+                    .start(this);
         }
-        CropImage.activity(uri)
-                .start(this);
+        else if(uri1!=null){
+            CropImage.activity(uri1)
+                    .start(this);
+
+        }
+
     }
 
     @Override

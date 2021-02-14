@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -29,7 +30,6 @@ import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import static com.example.imageeditor.EditImageActivity.bitmapBasic;
 import static com.example.imageeditor.EditImageActivity.cropThenRotateBitmap;
 import static com.example.imageeditor.EditImageActivity.croppedBitmap;
 import static com.example.imageeditor.EditImageActivity.rotateBitmap;
@@ -40,9 +40,11 @@ public class MainActivity extends AppCompatActivity {
     ImageView imageView;
     File cameraImage;
     TextView textView;
+    Button galleryButton;
     static Bitmap bitmap;
     static String imageFileName;
     static Uri uri;
+    static Uri uri1;
 
     @RequiresApi(api = Build.VERSION_CODES.Q)
     @Override
@@ -93,6 +95,7 @@ public class MainActivity extends AppCompatActivity {
                         "com.example.imageeditor.fileprovider",
                         photoFile);
                 takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
+                takePictureIntent.putExtra("android.intent.extras.CAMERA_FACING", 1);
                 startActivityForResult(takePictureIntent, 1);
             }
         }
@@ -100,7 +103,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    public void makeBitmapNull(){
+    public void makeBitmapNull() {
         croppedBitmap = null;
         rotateBitmap = null;
         cropThenRotateBitmap = null;
@@ -113,6 +116,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         imageView = findViewById(R.id.imageView);
         textView = findViewById(R.id.textView);
+        galleryButton = findViewById(R.id.galleryButton);
 
         if (cropThenRotateBitmap != null) {
             imageView.setImageBitmap(cropThenRotateBitmap);
@@ -132,7 +136,7 @@ public class MainActivity extends AppCompatActivity {
             imageView.setImageBitmap(croppedBitmap);
             textView.setText("Edited Image");
             makeBitmapNull();
-        } else if(bitmap!=null) {
+        } else if (bitmap != null) {
             imageView.setImageBitmap(bitmap);
             textView.setText("Edited Image");
             makeBitmapNull();
@@ -150,8 +154,17 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public static final int PICK_IMAGE = 2;
+
     public void clickGallery(View view) {
+
+        Intent intent = new Intent();
+        intent.setType("image/*");
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        startActivityForResult(Intent.createChooser(intent, "Select Picture"), PICK_IMAGE);
+
     }
+
 
     @RequiresApi(api = Build.VERSION_CODES.Q)
     @Override
@@ -185,7 +198,7 @@ public class MainActivity extends AppCompatActivity {
                     }
 
 
-                    Toast.makeText(this, "Imave Saved", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "Image Saved", Toast.LENGTH_SHORT).show();
 
                 } finally {
                     if (imageOutStream != null) {
@@ -201,6 +214,19 @@ public class MainActivity extends AppCompatActivity {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        } else {
+            try {
+                assert data != null;
+                uri1 = data.getData();
+                System.out.println(uri1.toString());
+                bitmap = MediaStore.Images.Media.getBitmap(getContentResolver(), uri1);
+
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
+            }
+
+            Intent intent = new Intent(this, EditImageActivity.class);
+            startActivity(intent);
         }
 
     }
